@@ -1,0 +1,44 @@
+---
+ - hosts: localhost
+   become: true 
+   remote_user: root
+   tasks: 
+    - name: innstall following packages
+      yum: name={{ item }}
+      with_items: 
+       - httpd
+       - php
+       - php-mysql
+       - mariadb-server
+       - mariadb
+
+    - name: service start 
+      service: name={{ item }}
+      with_items: 
+       - httpd
+       - mariadb-server
+
+    - name: firewalld for httpd
+      firewalld: service=https permanent=true immediate=true state=enabled
+
+
+    - name: removing anonymous user
+      mysql_user: user=anonymous state=absent host=localhost login_user=root login_password=redhat 
+
+    - name: removing test db
+      mysql_db: name=test state=absent login_user=root login_password=redhat
+
+    - name: creatign databse
+      mysql_db: name=wp state=present login_user=wp login_password=redhat
+
+    - name: creating databse user
+      mysql_user: name=wp password=redhat priv=*.*:ALL  host=localhost state=present login_user=wp login_password=redhat
+
+    - name: downloading wordpress
+      get_url: url=https://wordpress.org/latest.tar.gz dest=/tmp/wordpress.tar.gz
+
+    - name: extract wordpreess in default loaction of apache
+      unarchive: src=/tmp/wordpress.tar.gz dest=/var/www/html/wordpress copy=no
+
+  #  - name: copy config file
+     
